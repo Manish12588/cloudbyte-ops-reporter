@@ -28,14 +28,32 @@ def other_way_to_achieve():
 
     print("CloudByte Access Report")
     print(f"{len(total_logs)} events from {first_timestamp[:10]} {first_timestamp[11:]} to {last_timestamp[:10]} {last_timestamp[11:]}")
-    
+
     for log in total_logs:
         fields = log.split()
         date = fields[0][:10]
         time = fields[0][11:]
         print(f"{date} {time}  {fields[1]} {fields[2]}")
 
+def count_users_in_log():
+    user_counts={}
+    with open("cloudbyte_access.log") as files:
+            for log in files:
+                user = log.split()[1]
+                user_counts[user] = user_counts.get(user,0)+1
+    print("User Count: ", user_counts)
+    user_pairs = []
+
+    for user, count in user_counts.items():
+        user_pairs.append((count, user))
+    user_pairs.sort(reverse=True)
+
+    print("Most active users")
+
+    for rank, (count,name) in enumerate(user_pairs, start=1):
+        print(f"{rank}. {name}: {count} events")
 
 if __name__ == "__main__":
     main()
-    #other_way_to_achieve()
+    other_way_to_achieve()
+    count_users_in_log()
