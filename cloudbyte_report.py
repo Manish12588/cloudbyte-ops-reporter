@@ -1,59 +1,76 @@
 #!/usr/bin/env python3
 """CloudByte Ops Reporter: summarise CloudByte's activity from the command line."""
 
+def get_user(record):
+    return record.split()[1]
+
+def get_hours(record):
+    return record.split()[0][11:13]
+
+def get_action(record):
+    return record.split()[2]
+
 def main():
-    print("CloudByte Access Report")
-    with open("cloudbyte_access.log") as files:
-        totalLogs = files.readlines()  #Gives me the total lines from log file
-        firstLog_time = totalLogs[0].split()[0].split("T")
-        lastLog_time = totalLogs[-1].split()[0].split("T")
-        print(f"{len(totalLogs)} events from {firstLog_time[0]} {firstLog_time[1]} to {lastLog_time[0]} {lastLog_time[1]} \n")
-        for log in totalLogs:
-            fields = log.split()
-            date = fields[0][:10]
-            time = fields[0][11:]
-            print(f"{date} {time}  {fields[1]} {fields[2]}")       
+   
+   # Read the log file once
+   with open("cloudbyte_access.log") as files:
+      records = files.readlines()
 
-        
-# I created this function to achieve the result in different way
-def other_way_to_achieve():
-    total_logs =[]
-    #Storing the each lines into list
-    with open("cloudbyte_access.log") as files:
-        for log in files:
-            total_logs.append(log)
+   print("CloudByte Access Report")
+   firstLog_time = records[0].split()[0].split("T")
+   lastLog_time = records[-1].split()[0].split("T")
+   print(f"{len(records)} events from {firstLog_time[0]} {firstLog_time[1]} to {lastLog_time[0]} {lastLog_time[1]} \n")
 
-    first_timestamp = total_logs[0].split()[0]
-    last_timestamp = total_logs[-1].split()[0] 
-
-    print("CloudByte Access Report")
-    print(f"{len(total_logs)} events from {first_timestamp[:10]} {first_timestamp[11:]} to {last_timestamp[:10]} {last_timestamp[11:]}")
-
-    for log in total_logs:
-        fields = log.split()
+   for record in records:
+        fields = record.split()
         date = fields[0][:10]
         time = fields[0][11:]
         print(f"{date} {time}  {fields[1]} {fields[2]}")
 
-def count_users_in_log():
-    user_counts={}
-    with open("cloudbyte_access.log") as files:
-            for log in files:
-                user = log.split()[1]
-                user_counts[user] = user_counts.get(user,0)+1
-    print("User Count: ", user_counts)
-    user_pairs = []
-
-    for user, count in user_counts.items():
-        user_pairs.append((count, user))
-    user_pairs.sort(reverse=True)
-
-    print("Most active users")
-
-    for rank, (count,name) in enumerate(user_pairs, start=1):
+   #03 From Listing to Counting
+   print()
+   user_counts = {}
+   for record in records:
+      user = record.split()[1]
+      user_counts[user] = user_counts.get(user, 0) + 1
+ 
+   user_pairs = count_and_rank(records, get_user)
+   print("Most active users")
+   for rank, (count, name) in enumerate(user_pairs, start=1):
         print(f"{rank}. {name}: {count} events")
 
+   #04 - Section
+   print()
+   hour_pairs = count_and_rank(records, get_hours)
+   print("Busiest hours")
+   for count, hour in hour_pairs:
+      print(f"{hour}:00  {count} events")
+
+   print()
+   user_actions = count_and_rank(records,get_action)
+   print("Activity by type")
+   for rank, (count, action) in enumerate(user_actions, start=1):
+        print(f"  {rank}. {action}: {count} events")
+   
+
+
+
+def count_and_rank(records,get_key):
+   counts = {}
+   for record in records:
+        key = get_key(record)
+        counts[key] = counts.get(key, 0) + 1
+   pairs = []
+   for key, count in counts.items():
+        pairs.append((count, key))
+   #pairs.sort(reverse=True)
+   pairs.sort(key=by_count_then_name)
+   return pairs
+
+def by_count_then_name(pair):
+    """Sort key: busiest first, ties broken A-to-Z by name."""
+    count, name = pair          # "name" is whatever was ranked: a username or an hour
+    return (-count, name)       # busiest first (negated count), ties A->Z by name
+
 if __name__ == "__main__":
-    main()
-    other_way_to_achieve()
-    count_users_in_log()
+    main() 
