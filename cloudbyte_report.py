@@ -12,9 +12,21 @@ def get_action(record):
 
 def main():
    
-   # Read the log file once
-   with open("cloudbyte_access.log") as files:
-      records = files.readlines()
+   # 1. Way to read the files
+   # with open("cloudbyte_access.log") as files:
+   #    records = files.readlines()
+   
+   #2. Way to read the file
+   # records = []
+   # with open("cloudbyte_access.log") as f:
+   #      for line in f:
+   #          records.append(line)
+  
+   #3. Way to read the files with comprehension
+   with open("cloudbyte_access.log") as f:
+       records = [line for line in f]
+   #records = [ line for line in open("cloudbyte_access.log") ] 
+   #print(records)
 
    print("CloudByte Access Report")
    firstLog_time = records[0].split()[0].split("T")
@@ -40,30 +52,48 @@ def main():
         print(f"{rank}. {name}: {count} events")
 
    #04 - Section
+   #Busiest Hours
    print()
    hour_pairs = count_and_rank(records, get_hours)
    print("Busiest hours")
    for count, hour in hour_pairs:
       print(f"{hour}:00  {count} events")
 
+   #Activity By Type
    print()
    user_actions = count_and_rank(records,get_action)
    print("Activity by type")
    for rank, (count, action) in enumerate(user_actions, start=1):
         print(f"  {rank}. {action}: {count} events")
+
+   #Task 2: Most active logins
+   print()
+   print("Most active logins")
+   logins = [ record for record in records if get_action(record) == "login"]
+   most_active_login = count_and_rank(logins,get_user)
+   #print(most_active_login)
+   for rank, (count, user) in enumerate(most_active_login,start=1):
+       print(f"{rank}. {user}: {count} events")
+
+
+   #Task 3: Activity for one user
+   print()
+   all_actions_records = [ record for record in records if get_user(record) == "alice"]
+   action = count_and_rank(all_actions_records,get_action)
+
+   print(f"Activity for {all_actions_records[0].split()[1]}")
+   for rank, (count, action) in enumerate(action, start=1):
+      print(f"{rank}. {action}: {count} events")
+
    
-
-
 
 def count_and_rank(records,get_key):
    counts = {}
    for record in records:
         key = get_key(record)
         counts[key] = counts.get(key, 0) + 1
-   pairs = []
-   for key, count in counts.items():
-        pairs.append((count, key))
-   #pairs.sort(reverse=True)
+
+   pairs = [ (count, key) for key, count in counts.items()]
    pairs.sort(key=by_count_then_name)
    return pairs
 
